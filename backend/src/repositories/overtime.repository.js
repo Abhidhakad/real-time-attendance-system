@@ -1,0 +1,155 @@
+import { Overtime } from '../models/index.js';
+
+class OvertimeRepository {
+  async create(overtimeData) {
+    const overtime = new Overtime(overtimeData);
+    return await overtime.save();
+  }
+
+  async findById(id) {
+    return await Overtime.findById(id).populate('userId', 'name email department').populate('approvedBy', 'name');
+  }
+
+  async findByUser(userId, options = {}) {
+    const { page = 1, limit = 10, sort = '-createdAt' } = options;
+    const skip = (page - 1) * limit;
+
+    const [requests, total] = await Promise.all([
+      Overtime.find({ userId })
+        .populate('userId', 'name email department')
+        .populate('approvedBy', 'name')
+        .sort(sort)
+        .skip(skip)
+        .limit(limit),
+      Overtime.countDocuments({ userId })
+    ]);
+
+    return {
+      requests,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    };
+  }
+
+  async findPending(options = {}) {
+    const { page = 1, limit = 10, sort = '-createdAt' } = options;
+    const skip = (page - 1) * limit;
+
+    const [requests, total] = await Promise.all([
+      Overtime.find({ status: 'pending' })
+        .populate('userId', 'name email department')
+        .sort(sort)
+        .skip(skip)
+        .limit(limit),
+      Overtime.countDocuments({ status: 'pending' })
+    ]);
+
+    return {
+      requests,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    };
+  }
+
+  async findPendingForTeam(teamUserIds, options = {}) {
+    const { page = 1, limit = 10, sort = '-createdAt' } = options;
+    const skip = (page - 1) * limit;
+
+    const [requests, total] = await Promise.all([
+      Overtime.find({ userId: { $in: teamUserIds }, status: 'pending' })
+        .populate('userId', 'name email department')
+        .sort(sort)
+        .skip(skip)
+        .limit(limit),
+      Overtime.countDocuments({ userId: { $in: teamUserIds }, status: 'pending' })
+    ]);
+
+    return {
+      requests,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    };
+  }
+
+  async findByTeam(teamUserIds, options = {}) {
+    const { page = 1, limit = 10, sort = '-createdAt' } = options;
+    const skip = (page - 1) * limit;
+
+    const [requests, total] = await Promise.all([
+      Overtime.find({ userId: { $in: teamUserIds } })
+        .populate('userId', 'name email department')
+        .populate('approvedBy', 'name')
+        .sort(sort)
+        .skip(skip)
+        .limit(limit),
+      Overtime.countDocuments({ userId: { $in: teamUserIds } })
+    ]);
+
+    return {
+      requests,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    };
+  }
+
+  async findAll(query = {}, options = {}) {
+    const { page = 1, limit = 10, sort = '-createdAt' } = options;
+    const skip = (page - 1) * limit;
+
+    const [requests, total] = await Promise.all([
+      Overtime.find(query)
+        .populate('userId', 'name email department')
+        .populate('approvedBy', 'name')
+        .sort(sort)
+        .skip(skip)
+        .limit(limit),
+      Overtime.countDocuments(query)
+    ]);
+
+    return {
+      requests,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    };
+  }
+
+  async update(id, updateData) {
+    return await Overtime.findByIdAndUpdate(id, updateData, {
+      new: true,
+      runValidators: true
+    }).populate('userId', 'name email department').populate('approvedBy', 'name');
+  }
+
+  async existsForUserAndDate(userId, date) {
+    const existingDate = new Date(date);
+    const startOfDay = new Date(existingDate.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(existingDate.setHours(23, 59, 59, 999));
+
+    return await Overtime.findOne({
+      userId,
+      date: { $gte: startOfDay, $lte: endOfDay }
+    });
+  }
+}
+
+export default new OvertimeRepository();

@@ -1,0 +1,56 @@
+# Dependencies
+node_modules/
+.env
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Runtime
+pids/
+*.pid
+*.seed
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Build
+dist/
+build/
+*.tgz
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backend
+backend/node_modules/
+frontend/node_modules/
+
+# Environment
+.env.local
+.env.*.local
+
+# tests
+test-backend.js
+test-frontend.js
+test-files.js
+test-*.js
+tests/
+
+
+FINAL_TEST_REPORT.md
+FIXES.md
+RTK_FIX.md
+RUN_INSTRUCTIONS.md
+SPEC.md
+TEST_REPORT.md
+START.bat
