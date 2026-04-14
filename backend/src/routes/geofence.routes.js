@@ -11,6 +11,6 @@ router.post('/', isAdmin, validate(createGeofenceSchema), geofenceController.cre
 router.get('/', isAdmin, geofenceController.getAll);
 router.get('/:id', isAdmin, geofenceController.getById);
 router.put('/:id', isAdmin, validate(updateGeofenceSchema), geofenceController.update);
-router.delete('/:id', isAdmin, geofenceController.delete);
+router.delete('/:id', isAdmin, geofenceController.remove);
 
 export default router;

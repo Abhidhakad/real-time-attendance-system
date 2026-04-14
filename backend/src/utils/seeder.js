@@ -46,7 +46,7 @@ const seedDatabase = async () => {
     await User.deleteMany({});
     logger.info('Cleared existing users');
 
-    // 🔥 yahi fix hai
+    
     for (let user of seedUsers) {
       user.password = await bcrypt.hash(user.password, 10);
     }

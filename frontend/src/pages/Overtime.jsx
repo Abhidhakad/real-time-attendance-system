@@ -43,7 +43,7 @@ const Overtime = () => {
   })
 
   const pendingLoading = isAdmin ? allLoading : isManager ? teamLoading : false
-  const pendingData = isAdmin ? allPending?.data?.requests : isManager ? teamPending?.data : []
+  const pendingData = isAdmin ? allPending?.data : isManager ? teamPending?.data : []
   
   const teamPendingRequests = pendingData?.filter(req => {
     if (isAdmin) return true
