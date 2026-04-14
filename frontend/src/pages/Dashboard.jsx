@@ -1,11 +1,16 @@
-import { useEffect } from 'react'
 import { useSelector } from 'react-redux'
+import { Link } from 'react-router-dom'
+import { Clock } from 'lucide-react'
 import { useGetDashboardStatsQuery } from '../features/dashboard/dashboardApi'
+import { useGetMyAttendanceQuery } from '../features/attendance/attendanceApi'
 import { DashboardStats, Card, LoadingSpinner } from '../components'
+import { formatDate, formatTime } from '../utils'
 
 const Dashboard = () => {
   const { user } = useSelector((state) => state.auth)
-  const { data, isLoading, error } = useGetDashboardStatsQuery()
+  const { data, isLoading } = useGetDashboardStatsQuery()
+  const { data: attendanceData } = useGetMyAttendanceQuery({ limit: 3 })
+  const recentActivity = attendanceData?.data || []
 
   if (isLoading) {
     return (
@@ -19,7 +24,7 @@ const Dashboard = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Welcome back, {user?.name}!
+          Welcome, {user?.name}!
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mt-1">
           Here's what's happening with your attendance today.
@@ -59,10 +64,44 @@ const Dashboard = () => {
         </Card>
 
         <Card title="Recent Activity">
-          <div className="space-y-4">
-            <p className="text-gray-600 dark:text-gray-400 text-sm">
-              Your recent attendance activity will appear here.
-            </p>
+          <div className="space-y-3">
+            {recentActivity.length === 0 ? (
+              <p className="text-gray-600 dark:text-gray-400 text-sm">
+                No recent activity found.
+              </p>
+            ) : (
+              recentActivity.map((record) => (
+                <div
+                  key={record._id}
+                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
+                      <Clock className="w-4 h-4 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                        {formatDate(record.date)}
+                      </p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
+                        {record.punchIn?.time && `Punch In: ${formatTime(record.punchIn.time)}`}
+                        {record.punchIn?.time && record.punchOut?.time && ' | '}
+                        {record.punchOut?.time 
+                          ? `Punch Out: ${formatTime(record.punchOut.time)}` 
+                          : (record.punchIn?.time ? 'Punch Out: --:--' : '')}
+                      </p>
+                    </div>
+                  </div>
+                  <span className={`text-xs font-medium px-2 py-1 rounded ${
+                    record.status === 'completed' 
+                      ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
+                      : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300'
+                  }`}>
+                    {record.status === 'completed' ? `${record.workingHours}h` : 'Incomplete'}
+                  </span>
+                </div>
+              ))
+            )}
           </div>
         </Card>
       </div>
@@ -70,7 +109,7 @@ const Dashboard = () => {
   )
 }
 
-const QuickActionCard = ({ title, description, link, color, to }) => {
+const QuickActionCard = ({ title, description, link, color }) => {
   const colorClasses = {
     primary: 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400',
     success: 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400',
@@ -79,13 +118,13 @@ const QuickActionCard = ({ title, description, link, color, to }) => {
   }
 
   return (
-    <a
-      href={link}
+    <Link
+      to={link}
       className={`block p-4 rounded-lg ${colorClasses[color]} hover:opacity-80 transition-opacity`}
     >
       <h3 className="font-semibold">{title}</h3>
       <p className="text-sm opacity-80 mt-1">{description}</p>
-    </a>
+    </Link>
   )
 }
 

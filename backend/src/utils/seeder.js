@@ -1,5 +1,7 @@
 import dotenv from 'dotenv';
+import bcrypt from 'bcrypt';
 dotenv.config();
+
 
 import connectDB from '../config/database.js';
 import { User } from '../models/index.js';
@@ -44,6 +46,11 @@ const seedDatabase = async () => {
     await User.deleteMany({});
     logger.info('Cleared existing users');
 
+    // 🔥 yahi fix hai
+    for (let user of seedUsers) {
+      user.password = await bcrypt.hash(user.password, 10);
+    }
+
     const createdUsers = await User.insertMany(seedUsers);
     logger.info(`Seeded ${createdUsers.length} users`);
 
@@ -54,13 +61,12 @@ const seedDatabase = async () => {
         { role: 'employee', _id: { $ne: manager._id } },
         { managerId: manager._id }
       );
-      logger.info('Assigned manager to employees');
     }
 
-    logger.info('Database seeding completed successfully');
+    logger.info(' Done');
     process.exit(0);
   } catch (error) {
-    logger.error(`Seeding failed: ${error.message}`);
+    logger.error(` ${error.message}`);
     process.exit(1);
   }
 };

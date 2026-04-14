@@ -8,6 +8,7 @@ export const authApi = apiSlice.injectEndpoints({
         method: 'POST',
         body: credentials,
       }),
+      invalidatesTags: ['User'],
     }),
     register: builder.mutation({
       query: (userData) => ({
@@ -18,6 +19,7 @@ export const authApi = apiSlice.injectEndpoints({
     }),
     getProfile: builder.query({
       query: () => '/api/v1/auth/profile',
+      providesTags: ['User'],
     }),
     updateProfile: builder.mutation({
       query: (data) => ({
@@ -31,6 +33,7 @@ export const authApi = apiSlice.injectEndpoints({
         url: '/api/v1/auth/logout',
         method: 'POST',
       }),
+      invalidatesTags: ['User'],
     }),
   }),
 })

@@ -10,8 +10,10 @@ import {
   Overtime,
   Profile,
   Team,
+  TeamAssignment,
   UserManagement,
   Reports,
+  GeofenceManagement,
 } from '../pages'
 
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
@@ -59,6 +61,15 @@ const AppRoutes = () => {
         />
         
         <Route
+          path="/team/assign"
+          element={
+            <ProtectedRoute allowedRoles={['manager']}>
+              <TeamAssignment />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
           path="/admin/users"
           element={
             <ProtectedRoute allowedRoles={['admin']}>
@@ -72,6 +83,15 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute allowedRoles={['admin']}>
               <Reports />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/admin/geofence"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <GeofenceManagement />
             </ProtectedRoute>
           }
         />

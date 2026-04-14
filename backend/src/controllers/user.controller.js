@@ -1,5 +1,5 @@
 import { userService } from '../services/index.js';
-import { verifyMongoId } from '../utils/index.js';
+
 
 
 export const getAll = async (req, res, next) => {
@@ -62,9 +62,6 @@ export const update = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    // validate ObjectId
-    verifyMongoId(id);
-
     const user = await userService.updateUser(id, req.body);
 
     res.json({
@@ -81,10 +78,9 @@ export const deleteUser = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    // validate ObjectId
-    verifyMongoId(id);
+    
 
-    await userService.deleteUser(id);
+    await userService.deleteUser(id, req.user._id);
 
     res.json({
       success: true,
@@ -98,10 +94,16 @@ export const deleteUser = async (req, res, next) => {
 
 export const getTeamMembers = async (req, res, next) => {
   try {
-    const id = req.user._id;
-    // verify mongodb id
-    verifyMongoId(id);
-    const teamMembers = await userService.getTeamMembers(req.user._id);
+    const { department, managerId } = req.query;
+    const isAdmin = req.user.role === 'admin';
+
+    const filters = {
+      isAdmin,
+      department: department || null,
+      managerId: managerId || null
+    };
+
+    const teamMembers = await userService.getTeamMembers(req.user._id, filters);
 
     res.json({
       success: true,
@@ -119,6 +121,37 @@ export const getStats = async (req, res, next) => {
     res.json({
       success: true,
       data: { stats }
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export const getManagers = async (req, res, next) => {
+  try {
+    const managers = await userService.getManagers();
+
+    res.json({
+      success: true,
+      data: managers
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export const assignToManager = async (req, res, next) => {
+  try {
+    const { employeeId, managerId } = req.body;
+    const currentUserId = req.user._id;
+    const currentUserRole = req.user.role;
+
+    const employee = await userService.assignToManager(employeeId, managerId, currentUserId, currentUserRole);
+
+    res.json({
+      success: true,
+      message: 'Employee assigned to manager successfully',
+      data: { employee }
     });
   } catch (error) {
     next(error);

@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { setCredentials, logout } from '../features/auth/authSlice'
 import { useLoginMutation, useGetProfileQuery } from '../app/api/authApi'
+import { clearCache } from '../app/api/apiSlice'
 
 export const useAuth = () => {
   const dispatch = useDispatch()
@@ -23,6 +24,7 @@ export const useAuth = () => {
   }
 
   const logoutUser = () => {
+    clearCache()
     dispatch(logout())
     navigate('/login', { replace: true })
   }

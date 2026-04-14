@@ -23,6 +23,7 @@ export const uploadToCloudinary = async (base64Image, folder = 'attendance') => 
       publicId: result.public_id
     };
   } catch (error) {
+    console.log("cludinary Error: ",error)
     logger.error(`Cloudinary upload error: ${error.message}`);
     throw new Error('Failed to upload image');
   }

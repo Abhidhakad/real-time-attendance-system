@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { User } from '../models/index.js';
 
 export const create = async (userData) => {
@@ -47,7 +48,8 @@ export const findByDepartment = async (department) => {
 };
 
 export const findByManager = async (managerId) => {
-  return await User.find({ managerId, isActive: true }).select('-password');
+  const objectId = new mongoose.Types.ObjectId(managerId);
+  return await User.find({ managerId: objectId, isActive: true }).select('-password');
 };
 
 export const update = async (id, updateData) => {
@@ -63,4 +65,14 @@ export const deleteUser = async (id) => {
 
 export const count = async (query = {}) => {
   return await User.countDocuments(query);
+};
+
+export const findByRole = async (role) => {
+  return await User.find({ role, isActive: true }).select('name email department');
+};
+
+export const findAllWithManager = async (query) => {
+  return await User.find(query)
+    .select('-password')
+    .populate('managerId', 'name email department');
 };

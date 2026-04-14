@@ -77,7 +77,7 @@ attendanceSchema.pre('save', function (next) {
 });
 
 
-attendanceSchema.index({ date: 1 });
+
 attendanceSchema.index({ 'punchIn.location': '2dsphere' });
 
 // prevent multiple attendance per day per user

@@ -8,6 +8,7 @@ export const attendanceApi = apiSlice.injectEndpoints({
         method: 'POST',
         body: data,
       }),
+      invalidatesTags: ['Attendance'],
     }),
     punchOut: builder.mutation({
       query: (data) => ({
@@ -15,15 +16,18 @@ export const attendanceApi = apiSlice.injectEndpoints({
         method: 'POST',
         body: data,
       }),
+      invalidatesTags: ['Attendance'],
     }),
     getTodayAttendance: builder.query({
       query: () => '/api/v1/attendance/today',
+      providesTags: ['Attendance'],
     }),
     getMyAttendance: builder.query({
       query: (params) => ({
         url: '/api/v1/attendance/my',
         params,
       }),
+      providesTags: ['Attendance'],
     }),
     getTeamAttendance: builder.query({
       query: (params) => ({

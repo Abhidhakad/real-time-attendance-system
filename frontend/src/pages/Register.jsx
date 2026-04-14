@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
+import { Eye, EyeOff } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { setCredentials } from '../features/auth/authSlice'
 import { useRegisterMutation } from '../app/api/authApi'
 import { Button, Input, Card } from '../components'
@@ -9,24 +11,24 @@ const Register = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const [registerMutation, { isLoading }] = useRegisterMutation()
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
     confirmPassword: '',
   })
-  const [error, setError] = useState('')
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
-    setError('')
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match')
+      toast.error('Passwords do not match')
       return
     }
 
@@ -37,9 +39,10 @@ const Register = () => {
         password: formData.password,
       }).unwrap()
       dispatch(setCredentials(result.data))
+      toast.success('Registration successful!')
       navigate('/dashboard')
     } catch (err) {
-      setError(err.data?.message || 'Registration failed')
+      toast.error(err.data?.message || 'Registration failed')
     }
   }
 
@@ -49,12 +52,6 @@ const Register = () => {
         <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-6">
           Create Account
         </h2>
-        
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-sm">
-            {error}
-          </div>
-        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
@@ -63,39 +60,59 @@ const Register = () => {
             name="name"
             value={formData.name}
             onChange={handleChange}
-            placeholder="John Doe"
+            placeholder="Your full name"
             required
           />
-          
+
           <Input
             label="Email"
             type="email"
             name="email"
             value={formData.email}
             onChange={handleChange}
-            placeholder="john@company.com"
+            placeholder="yourmail@gmail.com"
             required
           />
-          
-          <Input
-            label="Password"
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            placeholder="Min 6 characters"
-            required
-          />
-          
-          <Input
-            label="Confirm Password"
-            type="password"
-            name="confirmPassword"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            placeholder="Confirm your password"
-            required
-          />
+
+          <div className="relative">
+
+            <Input
+              label="Password"
+              type={showPassword ? 'text' : 'password'}
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Min 6 characters"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-9 text-gray-400 hover:text-gray-600"
+            >
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+
+          <div className="relative">
+            <Input
+              label="Confirm Password"
+              type={showConfirmPassword ? 'text' : 'password'}
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              placeholder="Confirm your password"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-3 top-9 text-gray-400 hover:text-gray-600"
+            >
+              {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+
+          </div>
 
           <Button type="submit" className="w-full" loading={isLoading}>
             Create Account

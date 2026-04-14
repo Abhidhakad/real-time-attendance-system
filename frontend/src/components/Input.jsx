@@ -3,6 +3,8 @@ const Input = ({
   error, 
   className = '', 
   type = 'text',
+  min,
+  max,
   ...props 
 }) => {
   return (
@@ -21,6 +23,8 @@ const Input = ({
           ${error ? 'border-red-500' : 'border-gray-300'}
           ${className}
         `}
+        min={min}
+        max={max}
         {...props}
       />
       {error && (

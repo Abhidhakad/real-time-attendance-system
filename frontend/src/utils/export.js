@@ -1,8 +1,10 @@
+import * as jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
+import * as XLSX from 'xlsx'
+import { formatDate, formatTime, formatDateTime, getTodayDateString, getDateString } from './date'
+
 export const exportToPDF = (data, title) => {
-  const { default: jsPDF } = require('jspdf')
-  const { default: autoTable } = require('jspdf-autotable')
-  
-  const doc = new jsPDF()
+  const doc = new jsPDF.jsPDF()
   
   doc.setFontSize(18)
   doc.text(title, 14, 22)
@@ -11,7 +13,7 @@ export const exportToPDF = (data, title) => {
   doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 30)
   
   const tableData = data.map(item => [
-    item.userName || item.name || 'N/A',
+    item.userId?.name || item.name || 'N/A',
     item.date || getDateString(item.createdAt),
     item.punchIn?.time ? formatTime(item.punchIn.time) : 'N/A',
     item.punchOut?.time ? formatTime(item.punchOut.time) : 'N/A',
@@ -29,9 +31,7 @@ export const exportToPDF = (data, title) => {
 }
 
 export const exportToExcel = (data, title) => {
-  const XLSX = require('xlsx')
-  
-  const formattedData = data.map(item => ({
+  const worksheet = XLSX.utils.json_to_sheet(data.map(item => ({
     'Name': item.userId?.name || item.name || 'N/A',
     'Email': item.userId?.email || item.email || 'N/A',
     'Department': item.userId?.department || item.department || 'N/A',
@@ -40,13 +40,8 @@ export const exportToExcel = (data, title) => {
     'Punch Out Time': item.punchOut?.time ? formatTime(item.punchOut.time) : 'N/A',
     'Working Hours': item.workingHours || 0,
     'Status': item.status || 'N/A',
-  }))
-  
-  const worksheet = XLSX.utils.json_to_sheet(formattedData)
+  })))
   const workbook = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Attendance')
-  
   XLSX.writeFile(workbook, `${title.replace(/\s+/g, '_')}_${getTodayDateString()}.xlsx`)
 }
-
-export { formatDate, formatTime, formatDateTime, getTodayDateString, getDateString } from './date'

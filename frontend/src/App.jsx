@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { setCredentials } from './features/auth/authSlice'
 import { useGetProfileQuery } from './app/api/authApi'
@@ -6,8 +6,10 @@ import { AppRoutes } from './routes'
 
 function App() {
   const dispatch = useDispatch()
-  const { token } = useSelector((state) => state.auth)
+  const { token, user: storedUser } = useSelector((state) => state.auth)
   const { theme } = useSelector((state) => state.ui)
+  const prevTokenRef = useRef(token)
+  
   const { data, isSuccess } = useGetProfileQuery(undefined, {
     skip: !token,
   })

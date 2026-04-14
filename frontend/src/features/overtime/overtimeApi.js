@@ -8,6 +8,7 @@ export const overtimeApi = apiSlice.injectEndpoints({
         method: 'POST',
         body: data,
       }),
+      invalidatesTags: ['Overtime'],
     }),
     getMyOvertimeRequests: builder.query({
       query: (params) => ({

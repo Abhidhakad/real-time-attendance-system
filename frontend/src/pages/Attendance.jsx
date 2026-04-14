@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useSelector } from 'react-redux'
 import { MapPin, Camera, Loader2 } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { usePunchInMutation, usePunchOutMutation, useGetTodayAttendanceQuery } from '../features/attendance/attendanceApi'
 import { AttendanceCard, SelfieCapture, Button, Card, Modal } from '../components'
 import { getLocation } from '../utils'
@@ -14,7 +15,6 @@ const Attendance = () => {
   const [showCamera, setShowCamera] = useState(false)
   const [capturedImage, setCapturedImage] = useState(null)
   const [location, setLocation] = useState(null)
-  const [error, setError] = useState('')
   const [actionType, setActionType] = useState(null)
 
   const attendance = todayData?.data?.attendance
@@ -25,9 +25,8 @@ const Attendance = () => {
     try {
       const loc = await getLocation()
       setLocation(loc)
-      setError('')
     } catch (err) {
-      setError('Could not get location. Please enable location services.')
+      toast.error('Could not get location. Please enable location services.')
     }
   }
 
@@ -37,11 +36,11 @@ const Attendance = () => {
 
   const handlePunchIn = async () => {
     if (!capturedImage) {
-      setError('Please capture your selfie first')
+      toast.error('Please capture your selfie first')
       return
     }
     if (!location) {
-      setError('Please enable location services')
+      toast.error('Please enable location services')
       return
     }
 
@@ -51,22 +50,23 @@ const Attendance = () => {
         latitude: location.latitude,
         longitude: location.longitude,
       }).unwrap()
+      toast.success('Punch in successful!')
       refetch()
       setShowCamera(false)
       setCapturedImage(null)
       setLocation(null)
     } catch (err) {
-      setError(err.data?.message || 'Punch in failed')
+      toast.error(err.data?.message || 'Punch in failed')
     }
   }
 
   const handlePunchOut = async () => {
     if (!capturedImage) {
-      setError('Please capture your selfie first')
+      toast.error('Please capture your selfie first')
       return
     }
     if (!location) {
-      setError('Please enable location services')
+      toast.error('Please enable location services')
       return
     }
 
@@ -76,18 +76,18 @@ const Attendance = () => {
         latitude: location.latitude,
         longitude: location.longitude,
       }).unwrap()
+      toast.success('Punch out successful!')
       refetch()
       setShowCamera(false)
       setCapturedImage(null)
       setLocation(null)
     } catch (err) {
-      setError(err.data?.message || 'Punch out failed')
+      toast.error(err.data?.message || 'Punch out failed')
     }
   }
 
   const openCamera = (type) => {
     setActionType(type)
-    setError('')
     setShowCamera(true)
   }
 
@@ -106,12 +106,6 @@ const Attendance = () => {
           })}
         </p>
       </div>
-
-      {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg">
-          {error}
-        </div>
-      )}
 
       <AttendanceCard 
         attendance={attendance} 

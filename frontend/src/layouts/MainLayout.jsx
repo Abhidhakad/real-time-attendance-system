@@ -10,10 +10,15 @@ import {
   Menu,
   Sun,
   Moon,
-  ChevronRight
+  ChevronRight,
+  MapPin,
+  UserPlus
 } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { toggleTheme, toggleSidebar } from '../features/ui/uiSlice'
+import { logout } from '../features/auth/authSlice'
 import { useLogoutMutation } from '../app/api/authApi'
+import { clearCache } from '../app/api/apiSlice'
 
 const MainLayout = () => {
   const dispatch = useDispatch()
@@ -24,12 +29,14 @@ const MainLayout = () => {
   const [logoutMutation] = useLogoutMutation()
 
   const handleLogout = async () => {
+    clearCache()
     try {
       await logoutMutation().unwrap()
-      localStorage.removeItem('token')
-      navigate('/login')
     } catch (error) {
-      console.error('Logout failed:', error)
+      console.log('Logout API call skipped')
+    } finally {
+      dispatch(logout())
+      navigate('/login', { replace: true })
     }
   }
 
@@ -39,8 +46,10 @@ const MainLayout = () => {
     { path: '/attendance/history', label: 'History', icon: FileText, roles: ['employee', 'manager', 'admin'] },
     { path: '/overtime', label: 'Overtime', icon: Clock, roles: ['employee', 'manager', 'admin'] },
     { path: '/team', label: 'Team', icon: Users, roles: ['manager', 'admin'] },
+    { path: '/team/assign', label: 'Add Team Member', icon: UserPlus, roles: ['manager'] },
     { path: '/admin/users', label: 'Users', icon: Users, roles: ['admin'] },
     { path: '/admin/reports', label: 'Reports', icon: FileText, roles: ['admin'] },
+    { path: '/admin/geofence', label: 'Geofence', icon: MapPin, roles: ['admin'] },
     { path: '/profile', label: 'Profile', icon: Settings, roles: ['employee', 'manager', 'admin'] },
   ]
 
@@ -50,7 +59,7 @@ const MainLayout = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <aside className={`fixed top-0 left-0 z-40 h-screen bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-transform duration-300 ${sidebarOpen ? 'w-64' : 'w-20'}`}>
+      <aside className={`fixed top-0 left-0 z-40 h-screen bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 ${sidebarOpen ? 'w-64' : 'w-20'}`}>
         <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-700">
           {sidebarOpen ? (
             <h1 className="text-xl font-bold text-primary-600 dark:text-primary-400">AMS</h1>

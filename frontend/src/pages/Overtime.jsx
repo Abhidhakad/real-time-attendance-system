@@ -1,18 +1,37 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSelector } from 'react-redux'
-import { Clock, Plus, Check, X, Calendar } from 'lucide-react'
-import { useGetMyOvertimeRequestsQuery, useCreateOvertimeRequestMutation, useApproveOvertimeMutation, useRejectOvertimeMutation } from '../features/overtime/overtimeApi'
+import { Clock, Plus, Check, X, Calendar, Users } from 'lucide-react'
+import toast from 'react-hot-toast'
+import { 
+  useGetMyOvertimeRequestsQuery, 
+  useGetAllOvertimeRequestsQuery,
+  useGetTeamOvertimeRequestsQuery,
+  useCreateOvertimeRequestMutation, 
+  useApproveOvertimeMutation, 
+  useRejectOvertimeMutation 
+} from '../features/overtime/overtimeApi'
 import { Card, Badge, Button, Input, Modal, LoadingSpinner } from '../components'
 import { formatDate, getTodayDateString } from '../utils'
 
 const Overtime = () => {
   const { user } = useSelector((state) => state.auth)
   const [showRequestModal, setShowRequestModal] = useState(false)
-  const [selectedRequest, setSelectedRequest] = useState(null)
-  const [actionType, setActionType] = useState(null)
-
-  const { data: myRequests, isLoading } = useGetMyOvertimeRequestsQuery({ limit: 50 })
-  const { data: pendingRequests } = useGetTeamOvertimeRequestsQuery({ status: 'pending', limit: 50 })
+  
+  const { data: myRequests, isLoading: myLoading, refetch: refetchMy } = useGetMyOvertimeRequestsQuery({ limit: 50 })
+  
+  const isAdmin = user?.role === 'admin'
+  const isManager = user?.role === 'manager'
+  
+  const { data: allPending, isLoading: allLoading, refetch: refetchAll } = useGetAllOvertimeRequestsQuery(
+    { status: 'pending', limit: 100 },
+    { skip: !isAdmin }
+  )
+  
+  const { data: teamPending, isLoading: teamLoading, refetch: refetchTeam } = useGetTeamOvertimeRequestsQuery(
+    { status: 'pending', limit: 100 },
+    { skip: !isManager }
+  )
+  
   const [createRequest, { isLoading: isCreating }] = useCreateOvertimeRequestMutation()
   const [approveRequest] = useApproveOvertimeMutation()
   const [rejectRequest] = useRejectOvertimeMutation()
@@ -23,6 +42,20 @@ const Overtime = () => {
     requestedHours: '',
   })
 
+  const pendingLoading = isAdmin ? allLoading : isManager ? teamLoading : false
+  const pendingData = isAdmin ? allPending?.data?.requests : isManager ? teamPending?.data : []
+  
+  const teamPendingRequests = pendingData?.filter(req => {
+    if (isAdmin) return true
+    if (isManager) return req.userId?._id !== user?._id
+    return false
+  }) || []
+
+  useEffect(() => {
+    if (isAdmin) refetchAll()
+    else if (isManager) refetchTeam()
+  }, [isAdmin, isManager])
+
   const handleSubmitRequest = async (e) => {
     e.preventDefault()
     try {
@@ -31,32 +64,41 @@ const Overtime = () => {
         reason: formData.reason,
         requestedHours: parseFloat(formData.requestedHours),
       }).unwrap()
+      toast.success('Overtime request submitted!')
       setShowRequestModal(false)
       setFormData({ date: '', reason: '', requestedHours: '' })
-    } catch (error) {
-      console.error('Failed to create request:', error)
+      refetchMy()
+    } catch (err) {
+      toast.error(err.data?.message || 'Failed to create request')
     }
   }
 
   const handleApprove = async (id) => {
     try {
       await approveRequest({ id }).unwrap()
-    } catch (error) {
-      console.error('Failed to approve:', error)
+      toast.success('Request approved')
+      if (isAdmin) refetchAll()
+      else if (isManager) refetchTeam()
+      refetchMy()
+    } catch (err) {
+      toast.error(err.data?.message || 'Failed to approve')
     }
   }
 
   const handleReject = async (id) => {
     try {
       await rejectRequest({ id }).unwrap()
-    } catch (error) {
-      console.error('Failed to reject:', error)
+      toast.success('Request rejected')
+      if (isAdmin) refetchAll()
+      else if (isManager) refetchTeam()
+      refetchMy()
+    } catch (err) {
+      toast.error(err.data?.message || 'Failed to reject')
     }
   }
 
-  const canManageOT = user?.role === 'manager' || user?.role === 'admin'
   const requests = myRequests?.data || []
-  const teamPending = pendingRequests?.data || []
+  const canManage = isAdmin || isManager
 
   return (
     <div className="space-y-6">
@@ -71,48 +113,62 @@ const Overtime = () => {
         </Button>
       </div>
 
-      {canManageOT && teamPending.length > 0 && (
-        <Card title="Pending Approvals">
-          <div className="space-y-4">
-            {teamPending.map((request) => (
-              <div key={request._id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-medium text-gray-900 dark:text-white">
-                      {request.userId?.name || 'Unknown'}
-                    </span>
-                    <Badge variant="warning">Pending</Badge>
+      {canManage && (
+        <Card title={isAdmin ? 'All Pending Requests' : 'Team Pending Requests'}>
+          {pendingLoading ? (
+            <LoadingSpinner size="lg" text="Loading requests..." />
+          ) : !teamPendingRequests || teamPendingRequests.length === 0 ? (
+            <div className="text-center py-8">
+              <Users className="w-10 h-10 mx-auto text-gray-400 mb-3" />
+              <p className="text-gray-500 dark:text-gray-400">
+                {isAdmin ? 'No pending requests' : 'No pending requests from your team'}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {teamPendingRequests.map((request) => (
+                <div key={request._id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        {request.userId?.name || 'Unknown'}
+                      </span>
+                      {request.userId?.role && (
+                        <Badge variant={request.userId.role === 'manager' ? 'warning' : 'info'}>
+                          {request.userId.role}
+                        </Badge>
+                      )}
+                      <Badge variant="warning">Pending</Badge>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{request.reason}</p>
+                    <div className="flex items-center gap-4 mt-2 text-sm text-gray-500 dark:text-gray-400">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        {formatDate(request.date)}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {request.requestedHours}h
+                      </span>
+                    </div>
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {request.reason}
-                  </p>
-                  <div className="flex items-center gap-4 mt-2 text-sm text-gray-500 dark:text-gray-400">
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      {formatDate(request.date)}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {request.requestedHours}h
-                    </span>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="success" onClick={() => handleApprove(request._id)}>
+                      <Check className="w-4 h-4" />
+                    </Button>
+                    <Button size="sm" variant="danger" onClick={() => handleReject(request._id)}>
+                      <X className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button size="sm" variant="success" onClick={() => handleApprove(request._id)}>
-                    <Check className="w-4 h-4" />
-                  </Button>
-                  <Button size="sm" variant="danger" onClick={() => handleReject(request._id)}>
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </Card>
       )}
 
       <Card title="My Overtime Requests">
-        {isLoading ? (
+        {myLoading ? (
           <LoadingSpinner size="lg" text="Loading requests..." />
         ) : requests.length === 0 ? (
           <div className="text-center py-12">
@@ -124,9 +180,7 @@ const Overtime = () => {
             {requests.map((request) => (
               <div key={request._id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                 <div className="flex-1">
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                    {request.reason}
-                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{request.reason}</p>
                   <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
                     <span className="flex items-center gap-1">
                       <Calendar className="w-3 h-3" />

@@ -86,7 +86,7 @@ class OvertimeController {
   async approveRequest(req, res, next) {
     try {
       const { remarks } = req.body;
-      const overtime = await overtimeService.approveRequest(req.params.id, req.user._id, remarks);
+      const overtime = await overtimeService.approveRequest(req.params.id, req.user._id, req.user.role, remarks);
 
       res.json({
         success: true,
@@ -101,7 +101,7 @@ class OvertimeController {
   async rejectRequest(req, res, next) {
     try {
       const { remarks } = req.body;
-      const overtime = await overtimeService.rejectRequest(req.params.id, req.user._id, remarks);
+      const overtime = await overtimeService.rejectRequest(req.params.id, req.user._id, req.user.role, remarks);
 
       res.json({
         success: true,

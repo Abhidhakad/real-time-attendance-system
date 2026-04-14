@@ -3,7 +3,7 @@ import { geofenceService } from '../services/index.js';
 class GeofenceController {
   async create(req, res, next) {
     try {
-      const geofence = await geofenceService.create(req.body);
+      const geofence = await geofenceService.create(req.body, req.user._id);
 
       res.status(201).json({
         success: true,

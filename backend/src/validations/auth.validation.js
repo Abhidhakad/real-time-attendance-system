@@ -28,21 +28,32 @@ export const updateUserSchema = z.object({
   isActive: z.boolean().optional()
 });
 
-export const validate = (schema) => {
-  return (req, res, next) => {
-    try {
-      schema.parse(req.body);
-      next();
-    } catch (error) {
-      const errors = error.errors.map(err => ({
-        field: err.path.join('.'),
-        message: err.message
-      }));
+export const assignToManagerSchema = z.object({
+  employeeId: z.string().min(1, 'Employee ID is required'),
+  managerId: z.string().min(1, 'Manager ID is required').nullable()
+});
+
+export const validate = (schema) => (req, res, next) => {
+  try {
+    schema.parse(req.body);
+    return next();
+  } catch (err) {
+    
+    const issues = err?.issues || [];
+
+    if (issues.length > 0) {
       return res.status(400).json({
         success: false,
-        message: 'Validation failed',
-        errors
+        message: issues[0].message, 
+        field: issues[0].path?.[0] || null
       });
     }
-  };
+
+    console.error('Validation error:', err);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Something went wrong'
+    });
+  }
 };

@@ -1,7 +1,7 @@
 import { Geofence } from '../models/index.js';
 
 class GeofenceRepository {
-  async create(geofenceData) {
+  async create(geofenceData, adminId) {
     const geofence = new Geofence({
       name: geofenceData.name,
       center: {
@@ -9,13 +9,14 @@ class GeofenceRepository {
         coordinates: [geofenceData.longitude, geofenceData.latitude]
       },
       radius: geofenceData.radius,
-      isActive: geofenceData.isActive ?? true
+      isActive: geofenceData.isActive ?? true,
+      createdBy: adminId
     });
     return await geofence.save();
   }
 
   async findById(id) {
-    return await Geofence.findById(id);
+    return await Geofence.findById(id).populate('createdBy', 'name email');
   }
 
   async findAll(options = {}) {
@@ -24,6 +25,7 @@ class GeofenceRepository {
 
     const [geofences, total] = await Promise.all([
       Geofence.find()
+        .populate('createdBy', 'name email')
         .sort(sort)
         .skip(skip)
         .limit(limit),
@@ -61,7 +63,7 @@ class GeofenceRepository {
     return await Geofence.findByIdAndUpdate(id, updateObj, {
       new: true,
       runValidators: true
-    });
+    }).populate('createdBy', 'name email');
   }
 
   async delete(id) {

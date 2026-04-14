@@ -9,6 +9,13 @@ export const userApi = apiSlice.injectEndpoints({
       }),
       providesTags: ['User'],
     }),
+    getAllUsers: builder.query({
+      query: (params) => ({
+        url: '/api/v1/users',
+        params,
+      }),
+      providesTags: ['User'],
+    }),
     getUser: builder.query({
       query: (id) => `/api/v1/users/${id}`,
       providesTags: ['User'],
@@ -29,10 +36,25 @@ export const userApi = apiSlice.injectEndpoints({
       invalidatesTags: ['User'],
     }),
     getTeamMembers: builder.query({
-      query: () => '/api/v1/users/team',
+      query: (params) => ({
+        url: '/api/v1/users/team',
+        params,
+      }),
     }),
     getUserStats: builder.query({
       query: () => '/api/v1/users/stats',
+    }),
+    getManagers: builder.query({
+      query: () => '/api/v1/users/managers',
+      providesTags: ['User'],
+    }),
+    assignToManager: builder.mutation({
+      query: ({ employeeId, managerId }) => ({
+        url: '/api/v1/users/assign',
+        method: 'POST',
+        body: { employeeId, managerId },
+      }),
+      invalidatesTags: ['User'],
     }),
   }),
 })
@@ -44,4 +66,7 @@ export const {
   useDeleteUserMutation,
   useGetTeamMembersQuery,
   useGetUserStatsQuery,
+  useGetManagersQuery,
+  useAssignToManagerMutation,
+  useGetAllUsersQuery,
 } = userApi

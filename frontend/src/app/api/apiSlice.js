@@ -14,6 +14,10 @@ const baseQuery = fetchBaseQuery({
 
 export const apiSlice = createApi({
   baseQuery,
-  tagTypes: ['User', 'Attendance', 'Overtime', 'Dashboard'],
+  tagTypes: ['User', 'Attendance', 'Overtime', 'Dashboard', 'Geofence'],
   endpoints: () => ({}),
 })
+
+export const clearCache = () => {
+  apiSlice.util.resetApiState()
+}

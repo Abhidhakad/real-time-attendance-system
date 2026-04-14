@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useSelector } from 'react-redux'
-import { User, Mail, Briefcase, Building, Calendar } from 'lucide-react'
+import { useDispatch } from 'react-redux'
+import { User, Mail, Briefcase, Calendar } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { useUpdateProfileMutation } from '../app/api/authApi'
 import { updateUser } from '../features/auth/authSlice'
-import { useDispatch } from 'react-redux'
 import { Card, Button, Input, LoadingSpinner } from '../components'
 
 const Profile = () => {
@@ -14,13 +15,9 @@ const Profile = () => {
     name: user?.name || '',
     department: user?.department || '',
   })
-  const [success, setSuccess] = useState('')
-  const [error, setError] = useState('')
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
-    setSuccess('')
-    setError('')
   }
 
   const handleSubmit = async (e) => {
@@ -28,9 +25,9 @@ const Profile = () => {
     try {
       const result = await updateProfile(formData).unwrap()
       dispatch(updateUser(result.data.user))
-      setSuccess('Profile updated successfully')
+      toast.success('Profile updated successfully')
     } catch (err) {
-      setError(err.data?.message || 'Failed to update profile')
+      toast.error(err.data?.message || 'Failed to update profile')
     }
   }
 
@@ -52,17 +49,6 @@ const Profile = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {success && (
-              <div className="p-3 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg text-sm">
-                {success}
-              </div>
-            )}
-            {error && (
-              <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-sm">
-                {error}
-              </div>
-            )}
-
             <div className="flex items-center gap-4 mb-6">
               <div className="w-20 h-20 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
                 <span className="text-3xl font-bold text-primary-600 dark:text-primary-400">

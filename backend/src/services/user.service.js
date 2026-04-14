@@ -58,18 +58,39 @@ export const updateUser = async (id, updateData) => {
   return user;
 };
 
-export const deleteUser = async (id) => {
-  const user = await userRepository.delete(id);
+export const deleteUser = async (id, currentUserId) => {
+  const user = await userRepository.findById(id);
+  
   if (!user) {
     const error = new Error('User not found');
     error.statusCode = 404;
     throw error;
   }
-  logger.info(`User deleted: ${user.email}`);
-  return user;
+
+  if (user._id.toString() === currentUserId?.toString()) {
+    const error = new Error('You cannot delete your own account');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (user.role === 'admin') {
+    const error = new Error('Cannot delete admin users');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const deletedUser = await userRepository.deleteUser(id);
+  logger.info(`User deleted: ${deletedUser.email}`);
+  return deletedUser;
 };
 
-export const getTeamMembers = async (managerId) => {
+export const getTeamMembers = async (managerId, filters = {}) => {
+  if (filters.isAdmin) {
+    const query = { isActive: true, role: 'employee' };
+    if (filters.department) query.department = filters.department;
+    if (filters.managerId) query.managerId = filters.managerId;
+    return await userRepository.findAllWithManager(query);
+  }
   return await userRepository.findByManager(managerId);
 };
 
@@ -86,4 +107,52 @@ export const getStats = async () => {
   ]);
 
   return { total, employees, managers, admins };
+};
+
+export const getManagers = async () => {
+  return await userRepository.findByRole('manager');
+};
+
+export const assignToManager = async (employeeId, managerId, currentUserId, currentUserRole) => {
+  const employee = await userRepository.findById(employeeId);
+  
+  if (!employee) {
+    const error = new Error('Employee not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (employee.role !== 'employee') {
+    const error = new Error('Can only assign employees');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (employee._id.toString() === managerId?.toString()) {
+    const error = new Error('Employee cannot be their own manager');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (managerId) {
+    const manager = await userRepository.findById(managerId);
+    if (!manager) {
+      const error = new Error('Manager not found');
+      error.statusCode = 404;
+      throw error;
+    }
+    if (manager.role !== 'manager') {
+      const error = new Error('Invalid manager');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (currentUserRole !== 'admin' && managerId?.toString() !== currentUserId?.toString()) {
+      const error = new Error('You can only assign employees to yourself');
+      error.statusCode = 403;
+      throw error;
+    }
+  }
+
+  return await userRepository.update(employeeId, { managerId });
 };

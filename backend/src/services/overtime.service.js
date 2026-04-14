@@ -58,7 +58,7 @@ class OvertimeService {
     return await overtimeRepository.findAll(queryObj, options);
   }
 
-  async approveRequest(requestId, approverId, remarks = null) {
+  async approveRequest(requestId, approverId, approverRole, remarks = null) {
     const request = await overtimeRepository.findById(requestId);
     if (!request) {
       const error = new Error('Overtime request not found');
@@ -70,6 +70,27 @@ class OvertimeService {
       const error = new Error('Request is not pending');
       error.statusCode = 400;
       throw error;
+    }
+
+    const requestUserId = request.userId.toString();
+    const approverIdStr = approverId.toString();
+
+    if (requestUserId === approverIdStr) {
+      const error = new Error('You cannot approve your own request');
+      error.statusCode = 403;
+      throw error;
+    }
+
+    if (approverRole !== 'admin') {
+      const { userRepository } = await import('../repositories/index.js');
+      const teamMembers = await userRepository.findByManager(approverId);
+      const isTeamMember = teamMembers.some(m => m._id.toString() === requestUserId);
+      
+      if (!isTeamMember) {
+        const error = new Error('You can only approve your team members\' requests');
+        error.statusCode = 403;
+        throw error;
+      }
     }
 
     const updatedRequest = await overtimeRepository.update(requestId, {
@@ -83,7 +104,7 @@ class OvertimeService {
     return updatedRequest;
   }
 
-  async rejectRequest(requestId, approverId, remarks = null) {
+  async rejectRequest(requestId, approverId, approverRole, remarks = null) {
     const request = await overtimeRepository.findById(requestId);
     if (!request) {
       const error = new Error('Overtime request not found');
@@ -95,6 +116,27 @@ class OvertimeService {
       const error = new Error('Request is not pending');
       error.statusCode = 400;
       throw error;
+    }
+
+    const requestUserId = request.userId.toString();
+    const approverIdStr = approverId.toString();
+
+    if (requestUserId === approverIdStr) {
+      const error = new Error('You cannot reject your own request');
+      error.statusCode = 403;
+      throw error;
+    }
+
+    if (approverRole !== 'admin') {
+      const { userRepository } = await import('../repositories/index.js');
+      const teamMembers = await userRepository.findByManager(approverId);
+      const isTeamMember = teamMembers.some(m => m._id.toString() === requestUserId);
+      
+      if (!isTeamMember) {
+        const error = new Error('You can only reject your team members\' requests');
+        error.statusCode = 403;
+        throw error;
+      }
     }
 
     const updatedRequest = await overtimeRepository.update(requestId, {

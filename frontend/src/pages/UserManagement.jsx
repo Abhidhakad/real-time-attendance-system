@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Users, Edit, Trash2, Plus, Search } from 'lucide-react'
-import { useGetUsersQuery, useUpdateUserMutation, useDeleteUserMutation } from '../features/user/userApi'
+import toast from 'react-hot-toast'
+import { useGetUsersQuery, useUpdateUserMutation, useDeleteUserMutation, useGetManagersQuery, useAssignToManagerMutation } from '../features/user/userApi'
 import { Card, Badge, Button, Input, Select, Modal, LoadingSpinner } from '../components'
 import { formatDate } from '../utils'
 
@@ -17,6 +18,7 @@ const UserManagement = () => {
     name: '',
     role: '',
     department: '',
+    managerId: '',
     isActive: true,
   })
 
@@ -29,6 +31,8 @@ const UserManagement = () => {
 
   const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation()
   const [deleteUser] = useDeleteUserMutation()
+  const [assignToManager, { isLoading: isAssigning }] = useAssignToManagerMutation()
+  const { data: managersData } = useGetManagersQuery()
 
   const users = data?.data || []
   const pagination = data?.pagination || {}
@@ -39,6 +43,7 @@ const UserManagement = () => {
       name: user.name,
       role: user.role,
       department: user.department || '',
+      managerId: user.managerId || '',
       isActive: user.isActive,
     })
     setShowEditModal(true)
@@ -46,11 +51,27 @@ const UserManagement = () => {
 
   const handleSave = async () => {
     try {
-      await updateUser({ id: selectedUser._id, ...editData }).unwrap()
+      if (editData.role === 'employee' && editData.managerId !== selectedUser.managerId) {
+        await assignToManager({
+          employeeId: selectedUser._id,
+          managerId: editData.managerId || null
+        }).unwrap()
+        toast.success('Manager assigned successfully')
+      }
+      
+      const userData = {
+        name: editData.name,
+        role: editData.role,
+        department: editData.department,
+        isActive: editData.isActive,
+      }
+      
+      await updateUser({ id: selectedUser._id, ...userData }).unwrap()
+      toast.success('User updated successfully')
       setShowEditModal(false)
       refetch()
-    } catch (error) {
-      console.error('Failed to update user:', error)
+    } catch (err) {
+      toast.error(err.data?.message || 'Failed to update user')
     }
   }
 
@@ -58,9 +79,10 @@ const UserManagement = () => {
     if (window.confirm('Are you sure you want to delete this user?')) {
       try {
         await deleteUser(id).unwrap()
+        toast.success('User deleted successfully')
         refetch()
-      } catch (error) {
-        console.error('Failed to delete user:', error)
+      } catch (err) {
+        toast.error(err.data?.message || 'Failed to delete user')
       }
     }
   }
@@ -70,6 +92,14 @@ const UserManagement = () => {
     { value: 'manager', label: 'Manager' },
     { value: 'admin', label: 'Admin' },
   ]
+
+  const managerOptions = (managersData?.data || []).map(m => ({ value: m._id, label: m.name }))
+
+  const getManagerName = (managerId) => {
+    if (!managerId) return 'N/A'
+    const manager = managersData?.data?.find(m => m._id === managerId)
+    return manager?.name || 'N/A'
+  }
 
   return (
     <div className="space-y-6">
@@ -110,7 +140,7 @@ const UserManagement = () => {
                   <tr className="border-b border-gray-200 dark:border-gray-700">
                     <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">User</th>
                     <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Role</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Department</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Manager</th>
                     <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Status</th>
                     <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Joined</th>
                     <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Actions</th>
@@ -138,7 +168,7 @@ const UserManagement = () => {
                         </Badge>
                       </td>
                       <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">
-                        {user.department || 'N/A'}
+                        {getManagerName(user.managerId)}
                       </td>
                       <td className="py-3 px-4">
                         <Badge variant={user.isActive ? 'success' : 'default'}>
@@ -210,6 +240,12 @@ const UserManagement = () => {
             label="Department"
             value={editData.department}
             onChange={(e) => setEditData({ ...editData, department: e.target.value })}
+          />
+          <Select
+            label="Manager"
+            value={editData.managerId}
+            onChange={(e) => setEditData({ ...editData, managerId: e.target.value })}
+            options={[{ value: '', label: 'No Manager' }, ...managerOptions]}
           />
           <div className="flex items-center gap-2">
             <input

@@ -1,9 +1,37 @@
+import { useState, useEffect } from 'react'
 import { MapPin, Clock, Camera } from 'lucide-react'
 import Badge from './Badge'
 import Card from './Card'
 import { formatTime } from '../utils'
 
 const AttendanceCard = ({ attendance, isPunchedIn, loading }) => {
+  const [elapsedTime, setElapsedTime] = useState(null)
+
+  useEffect(() => {
+    if (attendance?.punchIn?.time && !attendance?.punchOut?.time) {
+      const updateTimer = () => {
+        const punchInTime = new Date(attendance.punchIn.time).getTime()
+        const now = Date.now()
+        const diff = now - punchInTime
+        setElapsedTime(diff)
+      }
+      
+      updateTimer()
+      const interval = setInterval(updateTimer, 1000)
+      return () => clearInterval(interval)
+    } else {
+      setElapsedTime(null)
+    }
+  }, [attendance?.punchIn?.time, attendance?.punchOut?.time])
+
+  const formatElapsedTime = (ms) => {
+    if (!ms) return '0h 0m 0s'
+    const seconds = Math.floor((ms / 1000) % 60)
+    const minutes = Math.floor((ms / (1000 * 60)) % 60)
+    const hours = Math.floor(ms / (1000 * 60 * 60))
+    return `${hours}h ${minutes}m ${seconds}s`
+  }
+
   return (
     <Card className="w-full">
       <div className="flex flex-col md:flex-row gap-6">
@@ -46,12 +74,14 @@ const AttendanceCard = ({ attendance, isPunchedIn, loading }) => {
 
             <div className="flex items-start gap-3">
               <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                <MapPin className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Working Hours</p>
                 <p className="font-medium text-gray-900 dark:text-white">
-                  {attendance?.workingHours ? `${attendance.workingHours}h` : '0h'}
+                  {elapsedTime !== null 
+                    ? formatElapsedTime(elapsedTime)
+                    : (attendance?.workingHours ? `${attendance.workingHours}h` : '0h')}
                 </p>
               </div>
             </div>

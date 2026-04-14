@@ -2,9 +2,9 @@ import { geofenceRepository } from '../repositories/index.js';
 import logger from '../config/logger.js';
 
 class GeofenceService {
-  async create(geofenceData) {
-    const geofence = await geofenceRepository.create(geofenceData);
-    logger.info(`Geofence created: ${geofence.name}`);
+  async create(geofenceData, adminId) {
+    const geofence = await geofenceRepository.create(geofenceData, adminId);
+    logger.info(`Geofence created: ${geofence.name} by admin ${adminId}`);
     return geofence;
   }
 
