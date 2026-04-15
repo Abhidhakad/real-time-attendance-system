@@ -1,4 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { store } from '../store'
 
 const baseQuery = fetchBaseQuery({
   baseUrl: import.meta.env.VITE_API_URL || 'http://localhost:5000',
@@ -19,5 +20,9 @@ export const apiSlice = createApi({
 })
 
 export const clearCache = () => {
-  apiSlice.util.resetApiState()
+  store.dispatch(apiSlice.util.resetApiState())
+}
+
+export const forceRefetch = () => {
+  store.dispatch(apiSlice.util.invalidateTags(['Attendance', 'User', 'Overtime', 'Dashboard', 'Geofence']))
 }

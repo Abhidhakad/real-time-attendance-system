@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { setCredentials, logout } from '../features/auth/authSlice'
 import { useLoginMutation, useGetProfileQuery } from '../app/api/authApi'
-import { clearCache } from '../app/api/apiSlice'
+import { clearCache, forceRefetch } from '../app/api/apiSlice'
 
 export const useAuth = () => {
   const dispatch = useDispatch()
@@ -14,9 +14,11 @@ export const useAuth = () => {
   
   const login = async (email, password) => {
     try {
+      clearCache()
+      forceRefetch()
       const result = await loginMutation({ email, password }).unwrap()
       dispatch(setCredentials(result.data))
-      navigate('/dashboard', { replace: true })
+      window.location.href = '/dashboard'
       return { success: true }
     } catch (error) {
       return { success: false, error: error.data?.message || 'Login failed' }
@@ -24,9 +26,10 @@ export const useAuth = () => {
   }
 
   const logoutUser = () => {
+    forceRefetch()
     clearCache()
     dispatch(logout())
-    navigate('/login', { replace: true })
+    window.location.href = '/login'
   }
 
   return {

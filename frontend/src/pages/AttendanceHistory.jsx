@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSelector } from 'react-redux'
 import { Calendar, Download, Filter } from 'lucide-react'
 import { useGetMyAttendanceQuery, useGetTeamAttendanceQuery, useGetAllAttendanceQuery } from '../features/attendance/attendanceApi'
@@ -7,12 +7,20 @@ import { formatDate, formatTime, getTodayDateString } from '../utils'
 
 const AttendanceHistory = () => {
   const { user } = useSelector((state) => state.auth)
+  const [userKey, setUserKey] = useState(user?._id)
   const [filters, setFilters] = useState({
     startDate: '',
     endDate: '',
     status: '',
     page: 1,
   })
+
+  useEffect(() => {
+    if (user?._id && user?._id !== userKey) {
+      setUserKey(user?._id)
+      setFilters(prev => ({ ...prev, page: 1 }))
+    }
+  }, [user?._id, userKey])
 
   const queryParams = {
     startDate: filters.startDate || undefined,
@@ -24,14 +32,17 @@ const AttendanceHistory = () => {
 
   const { data: myData, isLoading: myLoading } = useGetMyAttendanceQuery(queryParams, {
     skip: user?.role === 'manager' || user?.role === 'admin',
+    refetchOnMountOrArgChange: true,
   })
 
   const { data: teamData, isLoading: teamLoading } = useGetTeamAttendanceQuery(queryParams, {
     skip: user?.role !== 'manager' && user?.role !== 'admin',
+    refetchOnMountOrArgChange: true,
   })
 
   const { data: allData, isLoading: allLoading } = useGetAllAttendanceQuery(queryParams, {
     skip: user?.role !== 'admin',
+    refetchOnMountOrArgChange: true,
   })
 
   const isLoading = myLoading || teamLoading || allLoading

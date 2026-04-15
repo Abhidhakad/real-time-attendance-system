@@ -18,7 +18,7 @@ import toast from 'react-hot-toast'
 import { toggleTheme, toggleSidebar } from '../features/ui/uiSlice'
 import { logout } from '../features/auth/authSlice'
 import { useLogoutMutation } from '../app/api/authApi'
-import { clearCache } from '../app/api/apiSlice'
+import { clearCache, forceRefetch } from '../app/api/apiSlice'
 
 const MainLayout = () => {
   const dispatch = useDispatch()
@@ -29,14 +29,15 @@ const MainLayout = () => {
   const [logoutMutation] = useLogoutMutation()
 
   const handleLogout = async () => {
-    clearCache()
     try {
       await logoutMutation().unwrap()
     } catch (error) {
       console.log('Logout API call skipped')
     } finally {
+      forceRefetch()
+      clearCache()
       dispatch(logout())
-      navigate('/login', { replace: true })
+      window.location.href = '/login'
     }
   }
 
