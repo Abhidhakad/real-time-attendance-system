@@ -58,7 +58,7 @@ export const update = async (req, res, next) => {
 
 export const remove = async (req, res, next) => {
   try {
-    await geofenceService.delete(req.params.id);
+    await geofenceService.remove(req.params.id);
 
     res.json({
       success: true,

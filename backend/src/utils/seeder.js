@@ -55,18 +55,20 @@ const seedDatabase = async () => {
     logger.info(`Seeded ${createdUsers.length} users`);
 
     const manager = createdUsers.find(u => u.role === 'manager');
+    const admin = createdUsers.find(u => u.role === 'admin');
     
     if (manager) {
       await User.updateMany(
-        { role: 'employee', _id: { $ne: manager._id } },
+        { _id: { $ne: manager._id } },
         { managerId: manager._id }
       );
+      logger.info(`Assigned manager ${manager.email} to all non-manager users`);
     }
 
-    logger.info(' Done');
+    logger.info('Database seeded successfully!');
     process.exit(0);
   } catch (error) {
-    logger.error(` ${error.message}`);
+    logger.error(`Error: ${error.message}`);
     process.exit(1);
   }
 };

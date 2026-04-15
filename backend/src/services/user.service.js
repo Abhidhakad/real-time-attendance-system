@@ -19,7 +19,7 @@ export const getUserById = async (id) => {
 };
 
 export const updateUser = async (id, updateData) => {
-  const allowedFields = ['name', 'email', 'department', 'role'];
+  const allowedFields = ['name', 'email', 'department', 'role', 'managerId'];
 
   const filteredData = {};
 
@@ -45,6 +45,26 @@ export const updateUser = async (id, updateData) => {
     }
   }
 
+  if (filteredData.managerId !== undefined && filteredData.managerId !== null) {
+    const manager = await userRepository.findById(filteredData.managerId);
+    if (!manager) {
+      const error = new Error('Manager not found');
+      error.statusCode = 400;
+      throw error;
+    }
+    if (manager.role !== 'manager' && manager.role !== 'admin') {
+      const error = new Error('Manager must have manager or admin role');
+      error.statusCode = 400;
+      throw error;
+    }
+  }
+
+  if (filteredData.managerId === id) {
+    const error = new Error('User cannot be their own manager');
+    error.statusCode = 400;
+    throw error;
+  }
+
   const user = await userRepository.update(id, filteredData);
 
   if (!user) {
@@ -60,7 +80,7 @@ export const updateUser = async (id, updateData) => {
 
 export const deleteUser = async (id, currentUserId) => {
   const user = await userRepository.findById(id);
-  
+
   if (!user) {
     const error = new Error('User not found');
     error.statusCode = 404;
@@ -115,7 +135,7 @@ export const getManagers = async () => {
 
 export const assignToManager = async (employeeId, managerId, currentUserId, currentUserRole) => {
   const employee = await userRepository.findById(employeeId);
-  
+
   if (!employee) {
     const error = new Error('Employee not found');
     error.statusCode = 404;

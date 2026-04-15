@@ -35,6 +35,13 @@ export const getTeamRequests = async (managerId, options) => {
   const teamMembers = await userRepository.findByManager(managerId);
   const teamUserIds = teamMembers.map(m => m._id);
 
+  if (teamUserIds.length === 0) {
+    return {
+      requests: [],
+      pagination: { page: 1, limit: 10, total: 0, pages: 0 }
+    };
+  }
+
   return await overtimeRepository.findByTeam(teamUserIds, options);
 };
 
@@ -83,10 +90,17 @@ export const approveRequest = async (requestId, approverId, approverRole, remark
   if (approverRole !== 'admin') {
     const { userRepository } = await import('../repositories/index.js');
     const teamMembers = await userRepository.findByManager(approverId);
+    
+    if (!teamMembers || teamMembers.length === 0) {
+      const error = new Error('No team members found. Please ensure employees are assigned to you as manager.');
+      error.statusCode = 403;
+      throw error;
+    }
+    
     const isTeamMember = teamMembers.some(m => m._id.toString() === requestUserId);
     
     if (!isTeamMember) {
-      const error = new Error('You can only approve your team members\' requests');
+      const error = new Error('This employee is not in your team. Please contact admin to set proper manager-employee relationship.');
       error.statusCode = 403;
       throw error;
     }
@@ -129,10 +143,17 @@ export const rejectRequest = async (requestId, approverId, approverRole, remarks
   if (approverRole !== 'admin') {
     const { userRepository } = await import('../repositories/index.js');
     const teamMembers = await userRepository.findByManager(approverId);
+    
+    if (!teamMembers || teamMembers.length === 0) {
+      const error = new Error('No team members found. Please ensure employees are assigned to you as manager.');
+      error.statusCode = 403;
+      throw error;
+    }
+    
     const isTeamMember = teamMembers.some(m => m._id.toString() === requestUserId);
     
     if (!isTeamMember) {
-      const error = new Error('You can only reject your team members\' requests');
+      const error = new Error('This employee is not in your team. Please contact admin to set proper manager-employee relationship.');
       error.statusCode = 403;
       throw error;
     }

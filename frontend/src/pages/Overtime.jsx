@@ -31,6 +31,8 @@ const Overtime = () => {
     { status: 'pending', limit: 100 },
     { skip: !isManager }
   )
+
+  const teamPendingRequests = teamPending?.data || []
   
   const [createRequest, { isLoading: isCreating }] = useCreateOvertimeRequestMutation()
   const [approveRequest] = useApproveOvertimeMutation()
@@ -43,13 +45,7 @@ const Overtime = () => {
   })
 
   const pendingLoading = isAdmin ? allLoading : isManager ? teamLoading : false
-  const pendingData = isAdmin ? allPending?.data : isManager ? teamPending?.data : []
-  
-  const teamPendingRequests = pendingData?.filter(req => {
-    if (isAdmin) return true
-    if (isManager) return req.userId?._id !== user?._id
-    return false
-  }) || []
+  const pendingData = isAdmin ? allPending?.data : []
 
   useEffect(() => {
     if (isAdmin) refetchAll()
@@ -117,53 +113,59 @@ const Overtime = () => {
         <Card title={isAdmin ? 'All Pending Requests' : 'Team Pending Requests'}>
           {pendingLoading ? (
             <LoadingSpinner size="lg" text="Loading requests..." />
-          ) : !teamPendingRequests || teamPendingRequests.length === 0 ? (
-            <div className="text-center py-8">
-              <Users className="w-10 h-10 mx-auto text-gray-400 mb-3" />
-              <p className="text-gray-500 dark:text-gray-400">
-                {isAdmin ? 'No pending requests' : 'No pending requests from your team'}
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {teamPendingRequests.map((request) => (
-                <div key={request._id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium text-gray-900 dark:text-white">
-                        {request.userId?.name || 'Unknown'}
-                      </span>
-                      {request.userId?.role && (
-                        <Badge variant={request.userId.role === 'manager' ? 'warning' : 'info'}>
-                          {request.userId.role}
-                        </Badge>
-                      )}
-                      <Badge variant="warning">Pending</Badge>
+          ) : (() => {
+            const displayRequests = isAdmin ? pendingData : teamPendingRequests
+            if (!displayRequests || displayRequests.length === 0) return (
+              <div className="text-center py-8">
+                <Users className="w-10 h-10 mx-auto text-gray-400 mb-3" />
+                <p className="text-gray-500 dark:text-gray-400">
+                  {isAdmin ? 'No pending requests' : 'No pending requests from your team'}
+                </p>
+              </div>
+            )
+            return (
+              <div className="space-y-4">
+                {displayRequests.map((request) => (
+                  <div key={request._id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          {request.userId?.name || 'Unknown'}
+                        </span>
+                        {request.userId?.role && (
+                          <Badge variant={request.userId.role === 'manager' ? 'warning' : 'info'}>
+                            {request.userId.role}
+                          </Badge>
+                        )}
+                        <Badge variant="warning">Pending</Badge>
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{request.reason}</p>
+                      <div className="flex items-center gap-4 mt-2 text-sm text-gray-500 dark:text-gray-400">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {formatDate(request.date)}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {request.requestedHours}h
+                        </span>
+                      </div>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{request.reason}</p>
-                    <div className="flex items-center gap-4 mt-2 text-sm text-gray-500 dark:text-gray-400">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        {formatDate(request.date)}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {request.requestedHours}h
-                      </span>
-                    </div>
+                    {request.userId?._id !== user?._id && (
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="success" onClick={() => handleApprove(request._id)}>
+                          <Check className="w-4 h-4" />
+                        </Button>
+                        <Button size="sm" variant="danger" onClick={() => handleReject(request._id)}>
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="success" onClick={() => handleApprove(request._id)}>
-                      <Check className="w-4 h-4" />
-                    </Button>
-                    <Button size="sm" variant="danger" onClick={() => handleReject(request._id)}>
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )
+          })()}
         </Card>
       )}
 

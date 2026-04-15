@@ -37,7 +37,7 @@ export const update = async (id, updateData) => {
 };
 
 export const remove = async (id) => {
-  const geofence = await geofenceRepository.delete(id);
+  const geofence = await geofenceRepository.remove(id);
   if (!geofence) {
     const error = new Error('Geofence not found');
     error.statusCode = 404;

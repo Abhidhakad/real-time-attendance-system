@@ -85,17 +85,22 @@ export const findPendingForTeam = async (teamUserIds, options = {}) => {
 };
 
 export const findByTeam = async (teamUserIds, options = {}) => {
-  const { page = 1, limit = 10, sort = '-createdAt' } = options;
+  const { page = 1, limit = 10, sort = '-createdAt', status } = options;
   const skip = (page - 1) * limit;
 
+  const query = { userId: { $in: teamUserIds } };
+  if (status) {
+    query.status = status;
+  }
+
   const [requests, total] = await Promise.all([
-    Overtime.find({ userId: { $in: teamUserIds } })
-      .populate('userId', 'name email department')
+    Overtime.find(query)
+      .populate('userId', 'name email department managerId')
       .populate('approvedBy', 'name')
       .sort(sort)
       .skip(skip)
       .limit(limit),
-    Overtime.countDocuments({ userId: { $in: teamUserIds } })
+    Overtime.countDocuments(query)
   ]);
 
   return {

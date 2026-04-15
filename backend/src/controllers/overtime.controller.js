@@ -47,16 +47,11 @@ export const getPendingRequests = async (req, res, next) => {
 export const getTeamRequests = async (req, res, next) => {
   try {
     const { page, limit, status } = req.query;
-    const result = await overtimeService.getTeamRequests(req.user._id, { page, limit });
-
-    let requests = result.requests;
-    if (status) {
-      requests = requests.filter(r => r.status === status);
-    }
+    const result = await overtimeService.getTeamRequests(req.user._id, { page, limit, status });
 
     res.json({
       success: true,
-      data: requests,
+      data: result.requests,
       pagination: result.pagination
     });
   } catch (error) {
